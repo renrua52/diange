@@ -13,6 +13,7 @@
   let isAdmin = Boolean(adminPassword);
   let requestsOpen = localStorage.getItem(requestsOpenKey) !== "closed";
   let toastTimer;
+  let resizeTimer;
 
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -46,6 +47,7 @@
       request ? url.searchParams.set("view", "request") : url.searchParams.delete("view");
       history.pushState({}, "", url);
     }
+    if (!request) render();
     renderRequestAvailability();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -108,16 +110,19 @@
   }
 
   function renderLoop(container, items, renderItem) {
-    const shouldScroll = items.length > 1;
-    const copies = shouldScroll ? Math.max(2, Math.ceil(12 / items.length)) : 1;
-    let markup = "";
-    for (let copy = 0; copy < copies; copy += 1) {
-      markup += items.map((item, index) => renderItem(item, index, copy > 0)).join("");
+    const original = items.map((item, index) => renderItem(item, index, false)).join("");
+    container.innerHTML = original;
+    container.classList.remove("is-scrolling");
+
+    const viewportHeight = container.parentElement.clientHeight;
+    const shouldScroll = items.length > 1 && viewportHeight > 0 && container.scrollHeight > viewportHeight + 1;
+    if (shouldScroll) {
+      const duplicate = items.map((item, index) => renderItem(item, index, true)).join("");
+      container.innerHTML = original + duplicate;
     }
-    container.innerHTML = markup;
     container.classList.toggle("is-scrolling", shouldScroll);
     container.style.setProperty("--loop-duration", `${Math.max(12, items.length * 4)}s`);
-    container.style.setProperty("--loop-shift", `${-100 / copies}%`);
+    container.style.setProperty("--loop-shift", "-50%");
   }
 
   function renderAdmin() {
@@ -262,6 +267,10 @@
   $("#requestShortcut").addEventListener("click", () => setView("request"));
   $("#backToQueue").addEventListener("click", () => setView("queue"));
   window.addEventListener("popstate", () => setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false));
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(render, 120);
+  });
 
   els.songForm.addEventListener("submit", async (event) => {
     event.preventDefault();
