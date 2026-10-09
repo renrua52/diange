@@ -5,9 +5,11 @@
   const isConfigured = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
   const db = isConfigured ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey) : null;
   const storageKey = "karaoke-queue-v1";
+  const adminSessionKey = "karaoke-admin-password";
   const channel = "BroadcastChannel" in window ? new BroadcastChannel("karaoke-queue") : null;
   let songs = [];
-  let isAdmin = false;
+  let adminPassword = sessionStorage.getItem(adminSessionKey) || "";
+  let isAdmin = Boolean(adminPassword);
   let toastTimer;
 
   const $ = (selector) => document.querySelector(selector);
@@ -118,8 +120,11 @@
 
   async function updateSong(id, values) {
     if (db) {
-      if (values.status === "singing") await db.from("song_requests").update({ status: "finished" }).eq("status", "singing");
-      const { error } = await db.from("song_requests").update(values).eq("id", id);
+      const { error } = await db.rpc("admin_set_song_status", {
+        request_id: id,
+        next_status: values.status,
+        shared_password: adminPassword
+      });
       if (error) throw error;
       await fetchSongs();
     } else {
@@ -131,7 +136,10 @@
 
   async function deleteSong(id) {
     if (db) {
-      const { error } = await db.from("song_requests").delete().eq("id", id);
+      const { error } = await db.rpc("admin_delete_song", {
+        request_id: id,
+        shared_password: adminPassword
+      });
       if (error) throw error;
       await fetchSongs();
     } else { songs = songs.filter((song) => song.id !== id); saveLocal(); render(); }
@@ -139,7 +147,7 @@
 
   async function clearFinished() {
     if (db) {
-      const { error } = await db.from("song_requests").delete().eq("status", "finished");
+      const { error } = await db.rpc("admin_clear_finished", { shared_password: adminPassword });
       if (error) throw error;
       await fetchSongs();
     } else { songs = songs.filter((song) => song.status !== "finished"); saveLocal(); render(); }
@@ -152,12 +160,9 @@
     toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2800);
   }
 
-  async function openAdmin() {
+  function openAdmin() {
     els.dialogError.textContent = "";
-    if (db) {
-      const { data } = await db.auth.getSession();
-      isAdmin = Boolean(data.session);
-    }
+    isAdmin = Boolean(adminPassword);
     els.loginPanel.hidden = isAdmin;
     els.adminPanel.hidden = !isAdmin;
     $("#demoAdminHint").hidden = Boolean(db);
@@ -175,11 +180,8 @@
     if (db) {
       setConnected(true, "实时在线");
       db.channel("public-song-requests").on("postgres_changes", { event: "*", schema: "public", table: "song_requests" }, fetchSongs).subscribe();
-      db.auth.onAuthStateChange((_event, session) => { isAdmin = Boolean(session); });
     } else {
       setConnected(true, "本地演示");
-      $('label[for="adminEmail"]').hidden = true;
-      $("#adminEmail").hidden = true;
       channel?.addEventListener("message", fetchSongs);
       window.addEventListener("storage", fetchSongs);
     }
@@ -218,15 +220,26 @@
     event.preventDefault();
     els.dialogError.textContent = "";
     const data = new FormData(event.currentTarget);
+    const password = data.get("password");
     try {
       if (db) {
-        const { error } = await db.auth.signInWithPassword({ email: data.get("email"), password: data.get("password") });
+        const { data: valid, error } = await db.rpc("verify_admin_password", { shared_password: password });
         if (error) throw error;
-      } else if (data.get("password") !== "admin") throw new Error("密码不正确");
+        if (!valid) throw new Error("管理员密码不正确");
+      } else if (password !== "admin") throw new Error("密码不正确");
+      adminPassword = password;
+      sessionStorage.setItem(adminSessionKey, password);
       isAdmin = true; els.loginPanel.hidden = true; els.adminPanel.hidden = false; renderAdmin();
+      event.currentTarget.reset();
     } catch (error) { els.dialogError.textContent = error.message; }
   });
-  $("#logoutButton").addEventListener("click", async () => { if (db) await db.auth.signOut(); isAdmin = false; els.adminDialog.close(); showToast("已退出管理员模式"); });
+  $("#logoutButton").addEventListener("click", () => {
+    adminPassword = "";
+    sessionStorage.removeItem(adminSessionKey);
+    isAdmin = false;
+    els.adminDialog.close();
+    showToast("已退出管理员模式");
+  });
   els.adminQueue.addEventListener("click", async (event) => {
     const button = event.target.closest("button[data-action]");
     if (!button) return;

@@ -19,15 +19,4 @@ on public.song_requests for insert
 to anon, authenticated
 with check (status = 'waiting');
 
-create policy "Signed-in admins can update songs"
-on public.song_requests for update
-to authenticated
-using (true)
-with check (true);
-
-create policy "Signed-in admins can delete songs"
-on public.song_requests for delete
-to authenticated
-using (true);
-
 alter publication supabase_realtime add table public.song_requests;

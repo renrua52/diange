@@ -1,6 +1,6 @@
 # 「陆取通知」新生舞会点歌台
 
-「陆取通知」新生舞会的实时点歌队列。前端是无需构建的 HTML/CSS/JS，托管在 GitHub Pages；线上数据和管理员登录由 Supabase 提供。
+「陆取通知」新生舞会的实时点歌队列。前端是无需构建的 HTML/CSS/JS，托管在 GitHub Pages；线上数据和统一管理员密码由 Supabase 提供。
 
 ## 本地预览
 
@@ -14,11 +14,11 @@ python3 -m http.server 4173
 
 1. 在 [Supabase](https://supabase.com/) 创建免费项目。
 2. 打开 SQL Editor，执行 [`supabase/schema.sql`](./supabase/schema.sql)。
-3. 在 Authentication > Users 创建一个管理员账号。
+3. 打开 [`supabase/shared-admin.sql`](./supabase/shared-admin.sql)，将 `REPLACE_WITH_YOUR_SHARED_PASSWORD` 替换为活动统一管理员密码，然后在 SQL Editor 执行。以后修改密码时，替换后重新执行即可。
 4. 在 Project Settings > API 复制 Project URL 和 anon public key，填入 [`config.js`](./config.js)。`anon` key 可以公开，切勿把 `service_role` key 放到网页里。
 5. 将 `siteUrl` 设为最终地址，例如 `https://renrua52.github.io/diange`。留空时会自动使用当前页面地址。
 
-管理员权限由 Supabase Auth 与数据库 RLS 策略保护。访客只能查看和新增点歌，登录用户才能更新或删除。
+管理员不需要个人账号。持有统一密码的人可以管理队列，密码由数据库校验，不会写入网页源码。
 
 ## 发布到 GitHub Pages
 

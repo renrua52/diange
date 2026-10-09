@@ -114,14 +114,12 @@
       <button class="dialog-close" type="button" aria-label="关闭">×</button>
       <div id="loginPanel">
         <p class="eyebrow dark">ADMIN</p>
-        <h2>管理员登录</h2>
-        <p class="dialog-copy">登录后可以调整当前演唱、完成或删除歌曲。</p>
+        <h2>管理员入口</h2>
+        <p class="dialog-copy">输入活动统一密码，即可调整当前演唱、完成或删除歌曲。</p>
         <form id="loginForm">
-          <label for="adminEmail">邮箱</label>
-          <input id="adminEmail" name="email" type="email" autocomplete="username" placeholder="admin@example.com" />
-          <label for="adminPassword">密码</label>
-          <input id="adminPassword" name="password" type="password" autocomplete="current-password" required />
-          <button class="button button-dark" type="submit">登录</button>
+          <label for="adminPassword">统一管理员密码</label>
+          <input id="adminPassword" name="password" type="password" autocomplete="current-password" placeholder="请输入活动管理员密码" required />
+          <button class="button button-dark" type="submit">进入管理</button>
         </form>
         <p id="demoAdminHint" class="demo-hint" hidden>演示模式密码：<code>admin</code></p>
       </div>
