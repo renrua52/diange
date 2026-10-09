@@ -95,13 +95,13 @@
     els.queueCount.textContent = `${waiting.length} 首待唱`;
     els.emptyState.hidden = waiting.length > 0;
     els.historyEmpty.hidden = finished.length > 0;
-    renderLoop(els.queueList, waiting, (item, index, duplicate) => `
-      <li class="queue-item"${duplicate ? ' aria-hidden="true"' : ""}>
+    renderLoop(els.queueList, waiting, (item, index) => `
+      <li class="queue-item">
         <span class="queue-number">${String(index + 1).padStart(2, "0")}</span>
         <div><p class="song-title">${escapeHtml(item.song)}</p><p class="singer-name">${escapeHtml(item.singer)}</p></div>
       </li>`);
-    renderLoop(els.historyList, finished, (item, _index, duplicate) => `
-      <div class="history-item"${duplicate ? ' aria-hidden="true"' : ""}>
+    renderLoop(els.historyList, finished, (item) => `
+      <div class="history-item">
         <p class="song-title">${escapeHtml(item.song)}</p>
         <p class="singer-name">${escapeHtml(item.singer)}</p>
       </div>`);
@@ -109,19 +109,15 @@
   }
 
   function renderLoop(container, items, renderItem) {
-    const original = items.map((item, index) => renderItem(item, index, false)).join("");
-    container.innerHTML = original;
+    container.innerHTML = items.map((item, index) => renderItem(item, index)).join("");
     container.classList.remove("is-scrolling");
 
     const viewportHeight = container.parentElement.clientHeight;
-    const shouldScroll = items.length > 1 && viewportHeight > 0 && container.scrollHeight > viewportHeight + 1;
-    if (shouldScroll) {
-      const duplicate = items.map((item, index) => renderItem(item, index, true)).join("");
-      container.innerHTML = original + duplicate;
-    }
+    const scrollDistance = Math.max(0, container.scrollHeight - viewportHeight);
+    const shouldScroll = items.length > 1 && viewportHeight > 0 && scrollDistance > 1;
     container.classList.toggle("is-scrolling", shouldScroll);
-    container.style.setProperty("--loop-duration", `${Math.max(12, items.length * 4)}s`);
-    container.style.setProperty("--loop-shift", "-50%");
+    container.style.setProperty("--scroll-duration", `${Math.max(12, scrollDistance / 22)}s`);
+    container.style.setProperty("--scroll-distance", `${-scrollDistance}px`);
   }
 
   function renderAdmin() {
