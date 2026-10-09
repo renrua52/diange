@@ -269,8 +269,9 @@
 
   els.songForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     const button = $("#submitSong");
-    const data = new FormData(event.currentTarget);
+    const data = new FormData(form);
     const singer = data.get("singer").trim();
     const song = data.get("song").trim();
     if (!singer || !song) return;
@@ -280,7 +281,7 @@
       els.songForm.hidden = true;
       els.successPanel.hidden = false;
       els.successMessage.textContent = `“${song}” 已加入队列，轮到 ${singer} 时请准备好。`;
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) { showToast(`提交失败：${error.message}`); }
     finally { button.disabled = false; }
   });
@@ -295,8 +296,9 @@
 
   $("#loginForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
     els.dialogError.textContent = "";
-    const data = new FormData(event.currentTarget);
+    const data = new FormData(form);
     const password = data.get("password");
     try {
       if (db) {
@@ -307,7 +309,7 @@
       adminPassword = password;
       sessionStorage.setItem(adminSessionKey, password);
       isAdmin = true; els.loginPanel.hidden = true; els.adminPanel.hidden = false; renderAdmin();
-      event.currentTarget.reset();
+      form.reset();
     } catch (error) { els.dialogError.textContent = error.message; }
   });
   $("#logoutButton").addEventListener("click", () => {
@@ -327,8 +329,9 @@
     } catch (error) { els.dialogError.textContent = error.message; }
   });
   els.requestsToggle.addEventListener("change", async (event) => {
-    const nextOpen = event.currentTarget.checked;
-    event.currentTarget.disabled = true;
+    const toggle = event.currentTarget;
+    const nextOpen = toggle.checked;
+    toggle.disabled = true;
     els.dialogError.textContent = "";
     try {
       await setRequestsOpen(nextOpen);
@@ -338,7 +341,7 @@
       renderRequestAvailability();
       els.dialogError.textContent = error.message;
     } finally {
-      event.currentTarget.disabled = false;
+      toggle.disabled = false;
     }
   });
   $("#clearAll").addEventListener("click", async () => {
