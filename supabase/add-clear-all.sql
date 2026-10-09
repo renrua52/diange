@@ -12,7 +12,7 @@ begin
     raise exception '管理员密码错误' using errcode = '42501';
   end if;
 
-  delete from public.song_requests;
+  delete from public.song_requests where id is not null;
 end;
 $$;
 
