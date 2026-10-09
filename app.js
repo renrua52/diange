@@ -99,7 +99,6 @@
       <li class="queue-item"${duplicate ? ' aria-hidden="true"' : ""}>
         <span class="queue-number">${String(index + 1).padStart(2, "0")}</span>
         <div><p class="song-title">${escapeHtml(item.song)}</p><p class="singer-name">${escapeHtml(item.singer)}</p></div>
-        <span class="wait-time">约 ${Math.max(1, index + (current ? 1 : 0)) * 5} 分钟</span>
       </li>`);
     renderLoop(els.historyList, finished, (item, _index, duplicate) => `
       <div class="history-item"${duplicate ? ' aria-hidden="true"' : ""}>

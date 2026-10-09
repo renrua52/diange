@@ -77,11 +77,10 @@ button { cursor: pointer; }
 .loop-track.is-scrolling { animation: loop-scroll var(--loop-duration) linear infinite; }
 .loop-track.is-scrolling:hover { animation-play-state: paused; }
 .queue-list { list-style: none; }
-.queue-item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 66px; border-bottom: 1px solid var(--line); }
+.queue-item { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: center; min-height: 66px; border-bottom: 1px solid var(--line); }
 .queue-number { color: #a09f99; font: 700 16px/1 ui-monospace, monospace; }
 .song-title { margin: 0 0 4px; font-weight: 800; font-size: 17px; overflow-wrap: anywhere; }
 .singer-name { margin: 0; color: var(--muted); font-size: 14px; }
-.wait-time { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .qr-code { width: 112px; height: 112px; padding: 7px; background: white; border: 1px solid rgba(255,255,255,.7); }
 .qr-code img, .qr-code canvas { width: 96px !important; height: 96px !important; }
 .empty-state { padding: 34px 16px; text-align: center; border-bottom: 1px solid var(--line); }
@@ -167,7 +166,6 @@ input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(23,24,22,.08)
   .queue-number { font-size: 12px; }
   .song-title { font-size: 14px; }
   .singer-name { font-size: 11px; }
-  .wait-time { display: none; }
   .history-item { min-height: 58px; padding: 6px 2px; }
   .empty-state { padding: 24px 5px; font-size: 12px; }
   .request-hero { min-height: 52svh; padding: 28px 24px 30px; background-position: center 55%; }
