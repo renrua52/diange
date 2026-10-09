@@ -20,9 +20,8 @@
           <span class="brand-name">陆取通知 <small>新生舞会点歌台</small></span>
         </a>
         <div class="top-actions">
-          <span id="connectionStatus" class="status-dot" title="连接状态"><i></i><span>连接中</span></span>
-          <button id="requestShortcut" class="button button-primary compact" type="button">扫码点歌</button>
-          <button id="adminButton" class="icon-button" type="button" title="管理员登录" aria-label="管理员登录">
+          <button id="requestShortcut" class="button button-primary compact" type="button">点歌</button>
+          <button id="adminButton" class="icon-button" type="button" title="管理员入口" aria-label="管理员入口">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v-2m-5 7h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2Zm9-11V7a4 4 0 0 0-8 0v4"/></svg>
           </button>
         </div>
@@ -31,17 +30,16 @@
       <main>
         <section id="queueView" class="view queue-view">
           <div class="stage-panel">
-            <div class="stage-image" role="img" aria-label="陆取通知新生舞会主视觉"></div>
+            <div class="stage-image" role="img" aria-label="陆取通知新生舞会背景"></div>
             <div class="stage-content">
-              <div class="event-stamp">
-                <span>2026 NEW ARRIVALS</span>
-                <strong>新生舞会 · 点歌台</strong>
-              </div>
               <div class="now-playing">
-                <p class="eyebrow">NOW SINGING · 正在演唱</p>
+                <p class="eyebrow">正在演唱</p>
                 <h1 id="nowSong">等你开唱</h1>
-                <p id="nowSinger" class="now-singer">扫描右侧二维码，点一首吧</p>
-                <div id="nowBadge" class="now-badge"><span></span> 麦克风空闲</div>
+                <p id="nowSinger" class="now-singer">点一首，舞台等你</p>
+              </div>
+              <div class="hero-qr">
+                <div id="qrCode" class="qr-code" aria-label="点歌页面二维码"></div>
+                <strong>扫码点歌</strong>
               </div>
             </div>
           </div>
@@ -49,36 +47,25 @@
           <div class="queue-layout">
             <section class="queue-section" aria-labelledby="queueTitle">
               <div class="section-heading">
-                <div>
-                  <p class="eyebrow dark">UP NEXT · 下一位</p>
-                  <h2 id="queueTitle">接下来</h2>
-                </div>
+                <h2 id="queueTitle">当前队列</h2>
                 <span id="queueCount" class="queue-count">0 首待唱</span>
               </div>
-              <ol id="queueList" class="queue-list" aria-live="polite"></ol>
-              <div id="emptyState" class="empty-state">
-                <span class="empty-icon" aria-hidden="true">♫</span>
-                <h3>队列还是空的</h3>
-                <p>成为今晚第一个点歌的人</p>
-                <button class="button button-dark open-request" type="button">我要点歌</button>
+              <div class="loop-viewport">
+                <ol id="queueList" class="queue-list loop-track" aria-live="polite"></ol>
+                <div id="emptyState" class="empty-state"><p>还没有人点歌</p></div>
               </div>
             </section>
 
-            <aside class="request-card">
-              <div id="qrCode" class="qr-code" aria-label="点歌页面二维码"></div>
-              <h2>扫码点歌</h2>
-              <p>填写名字和歌曲，提交后会立即出现在队列中。</p>
-              <button class="button button-primary open-request" type="button">在本机点歌</button>
-              <p id="requestUrl" class="short-url"></p>
-            </aside>
+            <section id="historySection" class="history-section" aria-labelledby="historyTitle">
+              <div class="section-heading">
+                <h2 id="historyTitle">已经唱过</h2>
+              </div>
+              <div class="loop-viewport">
+                <div id="historyList" class="history-list loop-track"></div>
+                <div id="historyEmpty" class="empty-state"><p>还没有演唱记录</p></div>
+              </div>
+            </section>
           </div>
-
-          <section id="historySection" class="history-section" hidden>
-            <div class="section-heading">
-              <div><p class="eyebrow dark">FINISHED · 今夜回响</p><h2>今晚唱过</h2></div>
-            </div>
-            <div id="historyList" class="history-list"></div>
-          </section>
         </section>
 
         <section id="requestView" class="view request-view" hidden>
@@ -86,8 +73,6 @@
             <button id="backToQueue" class="back-button" type="button" aria-label="返回队列">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <p class="event-line">陆取通知 · 2026 新生舞会</p>
-            <p class="eyebrow">YOUR TURN · 轮到你了</p>
             <h1>点一首，下一位就是你</h1>
             <p>抵达此刻，唱出第一次心动。请留一个大家认得出的名字。</p>
           </div>
@@ -113,7 +98,6 @@
     <dialog id="adminDialog" class="admin-dialog">
       <button class="dialog-close" type="button" aria-label="关闭">×</button>
       <div id="loginPanel">
-        <p class="eyebrow dark">ADMIN</p>
         <h2>管理员入口</h2>
         <p class="dialog-copy">输入活动统一密码，即可调整当前演唱、完成或删除歌曲。</p>
         <form id="loginForm">
@@ -125,7 +109,7 @@
       </div>
       <div id="adminPanel" hidden>
         <div class="admin-header">
-          <div><p class="eyebrow dark">ADMIN</p><h2>队列管理</h2></div>
+          <h2>队列管理</h2>
           <button id="logoutButton" class="text-button" type="button">退出</button>
         </div>
         <div id="adminQueue" class="admin-queue"></div>

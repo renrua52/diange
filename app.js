@@ -17,11 +17,11 @@
   const els = {
     queueView: $("#queueView"), requestView: $("#requestView"), queueList: $("#queueList"),
     emptyState: $("#emptyState"), queueCount: $("#queueCount"), nowSong: $("#nowSong"),
-    nowSinger: $("#nowSinger"), nowBadge: $("#nowBadge"), historySection: $("#historySection"),
-    historyList: $("#historyList"), songForm: $("#songForm"), successPanel: $("#successPanel"),
+    nowSinger: $("#nowSinger"), historyList: $("#historyList"), historyEmpty: $("#historyEmpty"),
+    songForm: $("#songForm"), successPanel: $("#successPanel"),
     successMessage: $("#successMessage"), adminDialog: $("#adminDialog"), loginPanel: $("#loginPanel"),
     adminPanel: $("#adminPanel"), adminQueue: $("#adminQueue"), dialogError: $("#dialogError"),
-    connectionStatus: $("#connectionStatus"), toast: $("#toast")
+    toast: $("#toast")
   };
 
   const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
@@ -43,11 +43,6 @@
       history.pushState({}, "", url);
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function setConnected(connected, label) {
-    els.connectionStatus.classList.toggle("online", connected);
-    els.connectionStatus.querySelector("span").textContent = label;
   }
 
   function loadLocal() {
@@ -75,22 +70,38 @@
   function render() {
     const current = songs.find((song) => song.status === "singing");
     const waiting = songs.filter((song) => song.status === "waiting");
-    const finished = songs.filter((song) => song.status === "finished").slice(-12).reverse();
+    const finished = songs.filter((song) => song.status === "finished").slice(-30).reverse();
 
     els.nowSong.textContent = current?.song || "等你开唱";
-    els.nowSinger.textContent = current ? `${current.singer} 正在演唱` : "扫描右侧二维码，点一首吧";
-    els.nowBadge.innerHTML = current ? "<span></span> 正在演唱" : "<span></span> 麦克风空闲";
+    els.nowSinger.textContent = current ? current.singer : "点一首，舞台等你";
     els.queueCount.textContent = `${waiting.length} 首待唱`;
     els.emptyState.hidden = waiting.length > 0;
-    els.queueList.innerHTML = waiting.map((item, index) => `
-      <li class="queue-item">
+    els.historyEmpty.hidden = finished.length > 0;
+    renderLoop(els.queueList, waiting, (item, index, duplicate) => `
+      <li class="queue-item"${duplicate ? ' aria-hidden="true"' : ""}>
         <span class="queue-number">${String(index + 1).padStart(2, "0")}</span>
         <div><p class="song-title">${escapeHtml(item.song)}</p><p class="singer-name">${escapeHtml(item.singer)}</p></div>
         <span class="wait-time">约 ${Math.max(1, index + (current ? 1 : 0)) * 5} 分钟</span>
-      </li>`).join("");
-    els.historySection.hidden = finished.length === 0;
-    els.historyList.innerHTML = finished.map((item) => `<span class="history-item">${escapeHtml(item.song)} · ${escapeHtml(item.singer)}</span>`).join("");
+      </li>`);
+    renderLoop(els.historyList, finished, (item, _index, duplicate) => `
+      <div class="history-item"${duplicate ? ' aria-hidden="true"' : ""}>
+        <p class="song-title">${escapeHtml(item.song)}</p>
+        <p class="singer-name">${escapeHtml(item.singer)}</p>
+      </div>`);
     renderAdmin();
+  }
+
+  function renderLoop(container, items, renderItem) {
+    const shouldScroll = items.length > 1;
+    const copies = shouldScroll ? Math.max(2, Math.ceil(12 / items.length)) : 1;
+    let markup = "";
+    for (let copy = 0; copy < copies; copy += 1) {
+      markup += items.map((item, index) => renderItem(item, index, copy > 0)).join("");
+    }
+    container.innerHTML = markup;
+    container.classList.toggle("is-scrolling", shouldScroll);
+    container.style.setProperty("--loop-duration", `${Math.max(12, items.length * 4)}s`);
+    container.style.setProperty("--loop-shift", `${-100 / copies}%`);
   }
 
   function renderAdmin() {
@@ -172,16 +183,13 @@
 
   async function init() {
     const url = requestUrl();
-    $("#requestUrl").textContent = url.replace(/^https?:\/\//, "");
     if (window.QRCode) new window.QRCode($("#qrCode"), { text: url, width: 174, height: 174, correctLevel: window.QRCode.CorrectLevel.M });
     else $("#qrCode").textContent = "二维码加载失败";
 
     setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false);
     if (db) {
-      setConnected(true, "实时在线");
       db.channel("public-song-requests").on("postgres_changes", { event: "*", schema: "public", table: "song_requests" }, fetchSongs).subscribe();
     } else {
-      setConnected(true, "本地演示");
       channel?.addEventListener("message", fetchSongs);
       window.addEventListener("storage", fetchSongs);
     }
