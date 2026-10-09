@@ -5,11 +5,13 @@
   const isConfigured = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
   const db = isConfigured ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey) : null;
   const storageKey = "karaoke-queue-v1";
+  const requestsOpenKey = "karaoke-requests-open";
   const adminSessionKey = "karaoke-admin-password";
   const channel = "BroadcastChannel" in window ? new BroadcastChannel("karaoke-queue") : null;
   let songs = [];
   let adminPassword = sessionStorage.getItem(adminSessionKey) || "";
   let isAdmin = Boolean(adminPassword);
+  let requestsOpen = localStorage.getItem(requestsOpenKey) !== "closed";
   let toastTimer;
 
   const $ = (selector) => document.querySelector(selector);
@@ -18,10 +20,12 @@
     queueView: $("#queueView"), requestView: $("#requestView"), queueList: $("#queueList"),
     emptyState: $("#emptyState"), queueCount: $("#queueCount"), nowSong: $("#nowSong"),
     nowSinger: $("#nowSinger"), historyList: $("#historyList"), historyEmpty: $("#historyEmpty"),
-    songForm: $("#songForm"), successPanel: $("#successPanel"),
+    songForm: $("#songForm"), successPanel: $("#successPanel"), closedPanel: $("#closedPanel"),
     successMessage: $("#successMessage"), adminDialog: $("#adminDialog"), loginPanel: $("#loginPanel"),
     adminPanel: $("#adminPanel"), adminQueue: $("#adminQueue"), dialogError: $("#dialogError"),
-    toast: $("#toast")
+    requestsToggle: $("#requestsToggle"), requestsState: $("#requestsState"),
+    requestShortcut: $("#requestShortcut"), heroQr: $(".hero-qr"),
+    requestAccessLabel: $("#requestAccessLabel"), toast: $("#toast")
   };
 
   const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (char) => ({
@@ -42,6 +46,7 @@
       request ? url.searchParams.set("view", "request") : url.searchParams.delete("view");
       history.pushState({}, "", url);
     }
+    renderRequestAvailability();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -65,6 +70,17 @@
     if (error) return showToast(`加载失败：${error.message}`);
     songs = data || [];
     render();
+  }
+
+  async function fetchRequestAvailability() {
+    if (db) {
+      const { data, error } = await db.from("event_settings").select("requests_open").eq("id", true).single();
+      if (error) return showToast(`点歌通道状态加载失败：${error.message}`);
+      requestsOpen = data.requests_open;
+    } else {
+      requestsOpen = localStorage.getItem(requestsOpenKey) !== "closed";
+    }
+    renderRequestAvailability();
   }
 
   function render() {
@@ -106,6 +122,9 @@
 
   function renderAdmin() {
     if (!isAdmin) return;
+    els.requestsToggle.checked = requestsOpen;
+    els.requestsState.textContent = requestsOpen ? "开放中" : "已关闭";
+    els.requestsState.classList.toggle("closed", !requestsOpen);
     const active = songs.filter((song) => song.status !== "finished");
     els.adminQueue.innerHTML = active.length ? active.map((item) => `
       <div class="admin-row">
@@ -117,7 +136,27 @@
       </div>`).join("") : "<p class=\"dialog-copy\">当前没有待处理的歌曲。</p>";
   }
 
+  function renderRequestAvailability() {
+    els.requestShortcut.disabled = !requestsOpen;
+    els.requestShortcut.textContent = requestsOpen ? "点歌" : "点歌关闭";
+    els.heroQr.classList.toggle("closed", !requestsOpen);
+    els.requestAccessLabel.textContent = requestsOpen ? "扫码点歌" : "点歌已关闭";
+    els.requestsToggle.checked = requestsOpen;
+    els.requestsState.textContent = requestsOpen ? "开放中" : "已关闭";
+    els.requestsState.classList.toggle("closed", !requestsOpen);
+
+    if (!requestsOpen) {
+      els.songForm.hidden = true;
+      els.successPanel.hidden = true;
+      els.closedPanel.hidden = false;
+    } else {
+      els.closedPanel.hidden = true;
+      if (els.successPanel.hidden) els.songForm.hidden = false;
+    }
+  }
+
   async function addSong(singer, song) {
+    if (!requestsOpen) throw new Error("点歌通道已关闭");
     const record = { singer, song, status: "waiting" };
     if (db) {
       const { error } = await db.from("song_requests").insert(record);
@@ -156,12 +195,28 @@
     } else { songs = songs.filter((song) => song.id !== id); saveLocal(); render(); }
   }
 
-  async function clearFinished() {
+  async function clearAll() {
     if (db) {
-      const { error } = await db.rpc("admin_clear_finished", { shared_password: adminPassword });
+      const { error } = await db.rpc("admin_clear_all", { shared_password: adminPassword });
       if (error) throw error;
       await fetchSongs();
-    } else { songs = songs.filter((song) => song.status !== "finished"); saveLocal(); render(); }
+    } else { songs = []; saveLocal(); render(); }
+  }
+
+  async function setRequestsOpen(nextOpen) {
+    if (db) {
+      const { error } = await db.rpc("admin_set_requests_open", {
+        next_open: nextOpen,
+        shared_password: adminPassword
+      });
+      if (error) throw error;
+      await fetchRequestAvailability();
+    } else {
+      requestsOpen = nextOpen;
+      localStorage.setItem(requestsOpenKey, nextOpen ? "open" : "closed");
+      channel?.postMessage("settings");
+      renderRequestAvailability();
+    }
   }
 
   function showToast(message) {
@@ -188,12 +243,18 @@
 
     setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false);
     if (db) {
-      db.channel("public-song-requests").on("postgres_changes", { event: "*", schema: "public", table: "song_requests" }, fetchSongs).subscribe();
+      db.channel("public-live-state")
+        .on("postgres_changes", { event: "*", schema: "public", table: "song_requests" }, fetchSongs)
+        .on("postgres_changes", { event: "*", schema: "public", table: "event_settings" }, fetchRequestAvailability)
+        .subscribe();
     } else {
-      channel?.addEventListener("message", fetchSongs);
+      channel?.addEventListener("message", (event) => {
+        if (event.data === "settings") fetchRequestAvailability();
+        else fetchSongs();
+      });
       window.addEventListener("storage", fetchSongs);
     }
-    await fetchSongs();
+    await Promise.all([fetchSongs(), fetchRequestAvailability()]);
   }
 
   $$(".open-request").forEach((button) => button.addEventListener("click", () => setView("request")));
@@ -219,7 +280,11 @@
     } catch (error) { showToast(`提交失败：${error.message}`); }
     finally { button.disabled = false; }
   });
-  $("#addAnother").addEventListener("click", () => { els.successPanel.hidden = true; els.songForm.hidden = false; $("#singerName").focus(); });
+  $("#addAnother").addEventListener("click", () => {
+    els.successPanel.hidden = true;
+    renderRequestAvailability();
+    if (requestsOpen) $("#singerName").focus();
+  });
   $("#adminButton").addEventListener("click", openAdmin);
   $(".dialog-close").addEventListener("click", () => els.adminDialog.close());
   els.adminDialog.addEventListener("click", (event) => { if (event.target === els.adminDialog) els.adminDialog.close(); });
@@ -257,10 +322,25 @@
       else await updateSong(button.dataset.id, { status: button.dataset.action === "sing" ? "singing" : "finished" });
     } catch (error) { els.dialogError.textContent = error.message; }
   });
-  $("#clearFinished").addEventListener("click", async () => {
-    if (!songs.some((song) => song.status === "finished")) return showToast("没有已完成的歌曲");
-    if (!confirm("确定清空所有已完成记录吗？")) return;
-    try { await clearFinished(); showToast("已清空完成记录"); }
+  els.requestsToggle.addEventListener("change", async (event) => {
+    const nextOpen = event.currentTarget.checked;
+    event.currentTarget.disabled = true;
+    els.dialogError.textContent = "";
+    try {
+      await setRequestsOpen(nextOpen);
+      showToast(nextOpen ? "点歌通道已开放" : "点歌通道已关闭");
+    } catch (error) {
+      requestsOpen = !nextOpen;
+      renderRequestAvailability();
+      els.dialogError.textContent = error.message;
+    } finally {
+      event.currentTarget.disabled = false;
+    }
+  });
+  $("#clearAll").addEventListener("click", async () => {
+    if (songs.length === 0) return showToast("队列已经是空的");
+    if (!confirm("将删除正在演唱、等待中和已经唱过的全部记录，且无法恢复。确定继续吗？")) return;
+    try { await clearAll(); showToast("已彻底清空全部记录"); }
     catch (error) { els.dialogError.textContent = error.message; }
   });
 

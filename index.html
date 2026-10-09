@@ -39,7 +39,7 @@
               </div>
               <div class="hero-qr">
                 <div id="qrCode" class="qr-code" aria-label="点歌页面二维码"></div>
-                <strong>扫码点歌</strong>
+                <strong id="requestAccessLabel">扫码点歌</strong>
               </div>
             </div>
           </div>
@@ -84,6 +84,11 @@
             <button id="submitSong" class="button button-primary submit-button" type="submit">加入点歌队列</button>
             <p class="form-note">提交后，大屏上的队列会实时更新。</p>
           </form>
+          <div id="closedPanel" class="closed-panel" hidden>
+            <h2>点歌暂未开放</h2>
+            <p>请留意现场通知。</p>
+            <button class="text-button go-queue" type="button">查看当前队列</button>
+          </div>
           <div id="successPanel" class="success-panel" hidden>
             <div class="success-check" aria-hidden="true">✓</div>
             <h2>点歌成功</h2>
@@ -112,8 +117,19 @@
           <h2>队列管理</h2>
           <button id="logoutButton" class="text-button" type="button">退出</button>
         </div>
+        <div class="setting-row">
+          <div>
+            <strong>点歌通道</strong>
+            <small id="requestsState">开放中</small>
+          </div>
+          <label class="switch" for="requestsToggle">
+            <input id="requestsToggle" type="checkbox" checked />
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="sr-only">开放点歌通道</span>
+          </label>
+        </div>
         <div id="adminQueue" class="admin-queue"></div>
-        <button id="clearFinished" class="button button-danger-outline" type="button">清空已完成</button>
+        <button id="clearAll" class="button button-danger-outline" type="button">彻底清空全部记录</button>
       </div>
       <p id="dialogError" class="error-message" role="alert"></p>
     </dialog>

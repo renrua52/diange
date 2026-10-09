@@ -17,7 +17,7 @@ revoke update, delete on public.song_requests from anon, authenticated;
 insert into public.admin_config (id, password_hash)
 values (
   true,
-  extensions.crypt($password$hulikeai$password$, extensions.gen_salt('bf'))
+  extensions.crypt($password$REPLACE_WITH_YOUR_SHARED_PASSWORD$password$, extensions.gen_salt('bf'))
 )
 on conflict (id) do update
 set password_hash = excluded.password_hash;

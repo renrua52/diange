@@ -14,9 +14,11 @@ python3 -m http.server 4173
 
 1. 在 [Supabase](https://supabase.com/) 创建免费项目。
 2. 打开 SQL Editor，执行 [`supabase/schema.sql`](./supabase/schema.sql)。
-3. 打开 [`supabase/shared-admin.sql`](./supabase/shared-admin.sql)，将 `REPLACE_WITH_YOUR_SHARED_PASSWORD` 替换为活动统一管理员密码，然后在 SQL Editor 执行。以后修改密码时，替换后重新执行即可。
-4. 在 Project Settings > API 复制 Project URL 和 anon public key，填入 [`config.js`](./config.js)。`anon` key 可以公开，切勿把 `service_role` key 放到网页里。
-5. 将 `siteUrl` 设为最终地址，例如 `https://renrua52.github.io/diange`。留空时会自动使用当前页面地址。
+3. 将 [`supabase/shared-admin.sql`](./supabase/shared-admin.sql) 的内容复制到 SQL Editor，只在 SQL Editor 中将 `REPLACE_WITH_YOUR_SHARED_PASSWORD` 替换为活动统一管理员密码后执行。不要把真实密码保存到仓库文件中。
+4. 在 SQL Editor 执行 [`supabase/add-clear-all.sql`](./supabase/add-clear-all.sql)，启用彻底清空队列功能。
+5. 在 SQL Editor 执行 [`supabase/add-request-toggle.sql`](./supabase/add-request-toggle.sql)，启用点歌通道开关。
+6. 在 Project Settings > API 复制 Project URL 和 anon public key，填入 [`config.js`](./config.js)。`anon` key 可以公开，切勿把 `service_role` key 放到网页里。
+7. 将 `siteUrl` 设为最终地址，例如 `https://renrua52.github.io/diange`。留空时会自动使用当前页面地址。
 
 管理员不需要个人账号。持有统一密码的人可以管理队列，密码由数据库校验，不会写入网页源码。
 
