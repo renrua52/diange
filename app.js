@@ -4,6 +4,7 @@
   const config = window.APP_CONFIG || {};
   const isConfigured = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
   const db = isConfigured ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey) : null;
+  const isRequestDevice = new URLSearchParams(location.search).get("view") === "request";
   const storageKey = "karaoke-queue-v1";
   const requestsOpenKey = "karaoke-requests-open";
   const adminSessionKey = "karaoke-admin-password";
@@ -47,7 +48,10 @@
       request ? url.searchParams.set("view", "request") : url.searchParams.delete("view");
       history.pushState({}, "", url);
     }
-    if (!request) render();
+    if (!request) {
+      render();
+      if (isRequestDevice) fetchSongs();
+    }
     renderRequestAvailability();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -156,6 +160,7 @@
   }
 
   async function addSong(singer, song) {
+    if (isRequestDevice && db) await fetchRequestAvailability();
     if (!requestsOpen) throw new Error("点歌通道已关闭");
     const record = { singer, song, status: "waiting" };
     if (db) {
@@ -242,19 +247,23 @@
     else $("#qrCode").textContent = "二维码加载失败";
 
     setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false);
-    if (db) {
-      db.channel("public-live-state")
+    if (db && !isRequestDevice) {
+      const liveState = db.channel("public-live-state");
+      liveState
         .on("postgres_changes", { event: "*", schema: "public", table: "song_requests" }, fetchSongs)
         .on("postgres_changes", { event: "*", schema: "public", table: "event_settings" }, fetchRequestAvailability)
         .subscribe();
-    } else {
+    } else if (!db && !isRequestDevice) {
       channel?.addEventListener("message", (event) => {
         if (event.data === "settings") fetchRequestAvailability();
         else fetchSongs();
       });
       window.addEventListener("storage", fetchSongs);
     }
-    await Promise.all([fetchSongs(), fetchRequestAvailability()]);
+    await Promise.all([
+      isRequestDevice ? Promise.resolve() : fetchSongs(),
+      fetchRequestAvailability()
+    ]);
   }
 
   $$(".open-request").forEach((button) => button.addEventListener("click", () => setView("request")));
@@ -262,6 +271,7 @@
   $("#requestShortcut").addEventListener("click", () => setView("request"));
   $("#backToQueue").addEventListener("click", () => setView("queue"));
   window.addEventListener("popstate", () => setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false));
+  window.addEventListener("focus", () => { if (isRequestDevice) fetchRequestAvailability(); });
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(render, 120);
