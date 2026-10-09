@@ -3,10 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#171816" />
-    <meta name="description" content="现场点歌队列：扫码点歌，实时查看排队进度。" />
-    <title>今晚点歌台</title>
-    <link rel="preconnect" href="https://images.unsplash.com" />
+    <meta name="theme-color" content="#252630" />
+    <meta name="description" content="「陆取通知」新生舞会现场点歌队列。扫码点歌，实时查看排队进度。" />
+    <title>陆取通知｜新生舞会点歌台</title>
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -17,8 +16,8 @@
     <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="./" aria-label="返回点歌队列">
-          <span class="brand-mark" aria-hidden="true">♪</span>
-          <span>今晚点歌台</span>
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span class="brand-name">陆取通知 <small>新生舞会点歌台</small></span>
         </a>
         <div class="top-actions">
           <span id="connectionStatus" class="status-dot" title="连接状态"><i></i><span>连接中</span></span>
@@ -32,14 +31,18 @@
       <main>
         <section id="queueView" class="view queue-view">
           <div class="stage-panel">
-            <div class="stage-image" role="img" aria-label="舞台上的麦克风和歌手"></div>
+            <div class="stage-image" role="img" aria-label="陆取通知新生舞会主视觉"></div>
             <div class="stage-content">
-              <div>
-                <p class="eyebrow">NOW SINGING</p>
+              <div class="event-stamp">
+                <span>2026 NEW ARRIVALS</span>
+                <strong>新生舞会 · 点歌台</strong>
+              </div>
+              <div class="now-playing">
+                <p class="eyebrow">NOW SINGING · 正在演唱</p>
                 <h1 id="nowSong">等你开唱</h1>
                 <p id="nowSinger" class="now-singer">扫描右侧二维码，点一首吧</p>
+                <div id="nowBadge" class="now-badge"><span></span> 麦克风空闲</div>
               </div>
-              <div id="nowBadge" class="now-badge"><span></span> 麦克风空闲</div>
             </div>
           </div>
 
@@ -47,7 +50,7 @@
             <section class="queue-section" aria-labelledby="queueTitle">
               <div class="section-heading">
                 <div>
-                  <p class="eyebrow dark">UP NEXT</p>
+                  <p class="eyebrow dark">UP NEXT · 下一位</p>
                   <h2 id="queueTitle">接下来</h2>
                 </div>
                 <span id="queueCount" class="queue-count">0 首待唱</span>
@@ -72,7 +75,7 @@
 
           <section id="historySection" class="history-section" hidden>
             <div class="section-heading">
-              <div><p class="eyebrow dark">FINISHED</p><h2>今晚唱过</h2></div>
+              <div><p class="eyebrow dark">FINISHED · 今夜回响</p><h2>今晚唱过</h2></div>
             </div>
             <div id="historyList" class="history-list"></div>
           </section>
@@ -83,9 +86,10 @@
             <button id="backToQueue" class="back-button" type="button" aria-label="返回队列">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <p class="eyebrow">YOUR TURN</p>
+            <p class="event-line">陆取通知 · 2026 新生舞会</p>
+            <p class="eyebrow">YOUR TURN · 轮到你了</p>
             <h1>点一首，下一位就是你</h1>
-            <p>每人一次提交一首歌，请留一个大家认得出的名字。</p>
+            <p>抵达此刻，唱出第一次心动。请留一个大家认得出的名字。</p>
           </div>
           <form id="songForm" class="song-form">
             <label for="singerName">你的名字</label>
