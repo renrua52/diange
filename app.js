@@ -295,11 +295,6 @@
     } catch (error) { showToast(`提交失败：${error.message}`); }
     finally { button.disabled = false; }
   });
-  $("#addAnother").addEventListener("click", () => {
-    els.successPanel.hidden = true;
-    renderRequestAvailability();
-    if (requestsOpen) $("#singerName").focus();
-  });
   $("#adminButton").addEventListener("click", openAdmin);
   $(".dialog-close").addEventListener("click", () => els.adminDialog.close());
   els.adminDialog.addEventListener("click", (event) => { if (event.target === els.adminDialog) els.adminDialog.close(); });
