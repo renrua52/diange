@@ -27,7 +27,8 @@
     adminPanel: $("#adminPanel"), adminQueue: $("#adminQueue"), dialogError: $("#dialogError"),
     requestsToggle: $("#requestsToggle"), requestsState: $("#requestsState"),
     requestShortcut: $("#requestShortcut"), heroQr: $(".hero-qr"), visualButton: $("#visualButton"),
-    visualOverlay: $("#visualOverlay"),
+    visualOverlay: $("#visualOverlay"), visualQrButton: $("#visualQrButton"),
+    visualQrOverlay: $("#visualQrOverlay"), visualQrCode: $("#visualQrCode"), visualQrLabel: $("#visualQrLabel"),
     requestAccessLabel: $("#requestAccessLabel"), toast: $("#toast")
   };
 
@@ -153,6 +154,8 @@
     els.requestShortcut.textContent = requestsOpen ? "点歌" : "点歌关闭";
     els.heroQr.classList.toggle("closed", !requestsOpen);
     els.requestAccessLabel.textContent = requestsOpen ? "扫码点歌" : "点歌已关闭";
+    els.visualQrOverlay.classList.toggle("closed", !requestsOpen);
+    els.visualQrLabel.textContent = requestsOpen ? "扫码点歌" : "点歌已关闭";
     els.requestsToggle.checked = requestsOpen;
     els.requestsState.textContent = requestsOpen ? "开放中" : "已关闭";
     els.requestsState.classList.toggle("closed", !requestsOpen);
@@ -240,17 +243,18 @@
   }
 
   function hideVisual() {
-    els.visualOverlay.hidden = true;
-    els.visualButton.setAttribute("aria-pressed", "false");
+    [els.visualOverlay, els.visualQrOverlay].forEach((overlay) => { overlay.hidden = true; });
+    [els.visualButton, els.visualQrButton].forEach((button) => { button.setAttribute("aria-pressed", "false"); });
     document.body.classList.remove("visual-mode");
   }
 
-  function openVisual() {
-    els.visualOverlay.hidden = false;
-    els.visualButton.setAttribute("aria-pressed", "true");
+  function openVisual(overlay, button) {
+    hideVisual();
+    overlay.hidden = false;
+    button.setAttribute("aria-pressed", "true");
     document.body.classList.add("visual-mode");
-    const requestFullscreen = els.visualOverlay.requestFullscreen || els.visualOverlay.webkitRequestFullscreen;
-    const result = requestFullscreen?.call(els.visualOverlay);
+    const requestFullscreen = overlay.requestFullscreen || overlay.webkitRequestFullscreen;
+    const result = requestFullscreen?.call(overlay);
     result?.catch(() => {});
   }
 
@@ -279,8 +283,13 @@
 
   async function init() {
     const url = requestUrl();
-    if (window.QRCode) new window.QRCode($("#qrCode"), { text: url, width: 174, height: 174, correctLevel: window.QRCode.CorrectLevel.M });
-    else $("#qrCode").textContent = "二维码加载失败";
+    if (window.QRCode) {
+      new window.QRCode($("#qrCode"), { text: url, width: 174, height: 174, correctLevel: window.QRCode.CorrectLevel.M });
+      new window.QRCode(els.visualQrCode, { text: url, width: 420, height: 420, correctLevel: window.QRCode.CorrectLevel.M });
+    } else {
+      $("#qrCode").textContent = "二维码加载失败";
+      els.visualQrCode.textContent = "二维码加载失败";
+    }
 
     setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false);
     if (db && !isRequestDevice) {
@@ -306,12 +315,14 @@
   $$(".go-queue").forEach((button) => button.addEventListener("click", () => setView("queue")));
   $("#requestShortcut").addEventListener("click", () => setView("request"));
   $("#backToQueue").addEventListener("click", () => setView("queue"));
-  els.visualButton.addEventListener("click", openVisual);
+  els.visualButton.addEventListener("click", () => openVisual(els.visualOverlay, els.visualButton));
+  els.visualQrButton.addEventListener("click", () => openVisual(els.visualQrOverlay, els.visualQrButton));
   els.visualOverlay.addEventListener("click", closeVisual);
+  els.visualQrOverlay.addEventListener("click", closeVisual);
   document.addEventListener("fullscreenchange", syncVisualFullscreen);
   document.addEventListener("webkitfullscreenchange", syncVisualFullscreen);
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !els.visualOverlay.hidden) closeVisual();
+    if (event.key === "Escape" && (!els.visualOverlay.hidden || !els.visualQrOverlay.hidden)) closeVisual();
   });
   window.addEventListener("popstate", () => setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false));
   window.addEventListener("focus", () => { if (isRequestDevice) fetchRequestAvailability(); });

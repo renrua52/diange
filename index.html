@@ -24,6 +24,9 @@
           <button id="visualButton" class="icon-button visual-button" type="button" title="全屏主视觉" aria-label="全屏主视觉" aria-pressed="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5"/></svg>
           </button>
+          <button id="visualQrButton" class="icon-button visual-button" type="button" title="全屏扫码" aria-label="全屏主视觉与点歌二维码" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2z"/></svg>
+          </button>
           <button id="adminButton" class="icon-button" type="button" title="管理员入口" aria-label="管理员入口">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v-2m-5 7h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2Zm9-11V7a4 4 0 0 0-8 0v4"/></svg>
           </button>
@@ -103,6 +106,12 @@
 
     <button id="visualOverlay" class="visual-overlay" type="button" aria-label="退出全屏主视觉" hidden>
       <img src="./主视觉.jpg" alt="陆取通知新生舞会主视觉" />
+    </button>
+    <button id="visualQrOverlay" class="visual-overlay visual-qr-overlay" type="button" aria-label="退出全屏扫码画面" hidden>
+      <span class="visual-qr-panel">
+        <span id="visualQrCode" class="visual-qr-code" aria-label="点歌页面二维码"></span>
+        <strong id="visualQrLabel">扫码点歌</strong>
+      </span>
     </button>
 
     <dialog id="adminDialog" class="admin-dialog">
