@@ -129,12 +129,19 @@
     els.requestsToggle.checked = requestsOpen;
     els.requestsState.textContent = requestsOpen ? "开放中" : "已关闭";
     els.requestsState.classList.toggle("closed", !requestsOpen);
-    const active = songs.filter((song) => song.status !== "finished");
+    const active = [
+      ...songs.filter((song) => song.status === "pending"),
+      ...songs.filter((song) => song.status !== "pending" && song.status !== "finished")
+    ];
     els.adminQueue.innerHTML = active.length ? active.map((item) => `
       <div class="admin-row">
-        <div><strong>${escapeHtml(item.song)}</strong><small>${escapeHtml(item.singer)} · ${item.status === "singing" ? "演唱中" : "等待中"}</small></div>
+        <div><strong>${escapeHtml(item.song)}</strong><small>${escapeHtml(item.singer)} · ${{ pending: "待审核", waiting: "等待中", singing: "演唱中" }[item.status]}</small></div>
         <div class="admin-actions">
-          ${item.status === "waiting" ? `<button data-action="sing" data-id="${item.id}" title="设为正在演唱">开唱</button>` : `<button data-action="finish" data-id="${item.id}" title="标记为已完成">完成</button>`}
+          ${item.status === "pending"
+            ? `<button data-action="approve" data-id="${item.id}" title="审核通过并加入队列">通过</button>`
+            : item.status === "waiting"
+              ? `<button data-action="sing" data-id="${item.id}" title="设为正在演唱">开唱</button>`
+              : `<button data-action="finish" data-id="${item.id}" title="标记为已完成">完成</button>`}
           <button class="danger" data-action="delete" data-id="${item.id}" title="删除">删除</button>
         </div>
       </div>`).join("") : "<p class=\"dialog-copy\">当前没有待处理的歌曲。</p>";
@@ -162,7 +169,7 @@
   async function addSong(singer, song) {
     if (isRequestDevice && db) await fetchRequestAvailability();
     if (!requestsOpen) throw new Error("点歌通道已关闭");
-    const record = { singer, song, status: "waiting" };
+    const record = { singer, song, status: "pending" };
     if (db) {
       const { error } = await db.from("song_requests").insert(record);
       if (error) throw error;
@@ -290,7 +297,7 @@
       await addSong(singer, song);
       els.songForm.hidden = true;
       els.successPanel.hidden = false;
-      els.successMessage.textContent = `“${song}” 已加入队列，轮到 ${singer} 时请准备好。`;
+      els.successMessage.textContent = `“${song}” 已提交，管理员确认后会出现在大屏队列。`;
       form.reset();
     } catch (error) { showToast(`提交失败：${error.message}`); }
     finally { button.disabled = false; }
@@ -330,7 +337,10 @@
     button.disabled = true;
     try {
       if (button.dataset.action === "delete") await deleteSong(button.dataset.id);
-      else await updateSong(button.dataset.id, { status: button.dataset.action === "sing" ? "singing" : "finished" });
+      else {
+        const nextStatus = { approve: "waiting", sing: "singing", finish: "finished" }[button.dataset.action];
+        await updateSong(button.dataset.id, { status: nextStatus });
+      }
     } catch (error) { els.dialogError.textContent = error.message; }
   });
   els.requestsToggle.addEventListener("change", async (event) => {
@@ -351,7 +361,7 @@
   });
   $("#clearAll").addEventListener("click", async () => {
     if (songs.length === 0) return showToast("队列已经是空的");
-    if (!confirm("将删除正在演唱、等待中和已经唱过的全部记录，且无法恢复。确定继续吗？")) return;
+    if (!confirm("将删除待审核、正在演唱、等待中和已经唱过的全部记录，且无法恢复。确定继续吗？")) return;
     try { await clearAll(); showToast("已彻底清空全部记录"); }
     catch (error) { els.dialogError.textContent = error.message; }
   });

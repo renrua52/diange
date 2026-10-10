@@ -26,7 +26,7 @@ create policy "Anyone can request a song"
 on public.song_requests for insert
 to anon, authenticated
 with check (
-  status = 'waiting'
+  status = 'pending'
   and exists (
     select 1 from public.event_settings
     where id = true and requests_open = true

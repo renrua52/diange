@@ -50,7 +50,7 @@ begin
     raise exception '管理员密码错误' using errcode = '42501';
   end if;
 
-  if next_status not in ('singing', 'finished') then
+  if next_status not in ('waiting', 'singing', 'finished') then
     raise exception '无效的歌曲状态';
   end if;
 
