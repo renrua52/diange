@@ -26,7 +26,8 @@
     successMessage: $("#successMessage"), adminDialog: $("#adminDialog"), loginPanel: $("#loginPanel"),
     adminPanel: $("#adminPanel"), adminQueue: $("#adminQueue"), dialogError: $("#dialogError"),
     requestsToggle: $("#requestsToggle"), requestsState: $("#requestsState"),
-    requestShortcut: $("#requestShortcut"), heroQr: $(".hero-qr"),
+    requestShortcut: $("#requestShortcut"), heroQr: $(".hero-qr"), visualButton: $("#visualButton"),
+    visualOverlay: $("#visualOverlay"),
     requestAccessLabel: $("#requestAccessLabel"), toast: $("#toast")
   };
 
@@ -238,6 +239,34 @@
     toastTimer = setTimeout(() => els.toast.classList.remove("show"), 2800);
   }
 
+  function hideVisual() {
+    els.visualOverlay.hidden = true;
+    els.visualButton.setAttribute("aria-pressed", "false");
+    document.body.classList.remove("visual-mode");
+  }
+
+  function openVisual() {
+    els.visualOverlay.hidden = false;
+    els.visualButton.setAttribute("aria-pressed", "true");
+    document.body.classList.add("visual-mode");
+    const requestFullscreen = els.visualOverlay.requestFullscreen || els.visualOverlay.webkitRequestFullscreen;
+    const result = requestFullscreen?.call(els.visualOverlay);
+    result?.catch(() => {});
+  }
+
+  function closeVisual() {
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    if (!fullscreenElement || !exitFullscreen) return hideVisual();
+    const result = exitFullscreen.call(document);
+    if (result?.then) result.then(hideVisual, hideVisual);
+    else hideVisual();
+  }
+
+  function syncVisualFullscreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) hideVisual();
+  }
+
   function openAdmin() {
     els.dialogError.textContent = "";
     isAdmin = Boolean(adminPassword);
@@ -277,6 +306,13 @@
   $$(".go-queue").forEach((button) => button.addEventListener("click", () => setView("queue")));
   $("#requestShortcut").addEventListener("click", () => setView("request"));
   $("#backToQueue").addEventListener("click", () => setView("queue"));
+  els.visualButton.addEventListener("click", openVisual);
+  els.visualOverlay.addEventListener("click", closeVisual);
+  document.addEventListener("fullscreenchange", syncVisualFullscreen);
+  document.addEventListener("webkitfullscreenchange", syncVisualFullscreen);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.visualOverlay.hidden) closeVisual();
+  });
   window.addEventListener("popstate", () => setView(new URLSearchParams(location.search).get("view") === "request" ? "request" : "queue", false));
   window.addEventListener("focus", () => { if (isRequestDevice) fetchRequestAvailability(); });
   window.addEventListener("resize", () => {

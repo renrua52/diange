@@ -21,6 +21,9 @@
         </a>
         <div class="top-actions">
           <button id="requestShortcut" class="button button-primary compact" type="button">点歌</button>
+          <button id="visualButton" class="icon-button visual-button" type="button" title="全屏主视觉" aria-label="全屏主视觉" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M8 21H3v-5m13 5h5v-5"/></svg>
+          </button>
           <button id="adminButton" class="icon-button" type="button" title="管理员入口" aria-label="管理员入口">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v-2m-5 7h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2Zm9-11V7a4 4 0 0 0-8 0v4"/></svg>
           </button>
@@ -97,6 +100,10 @@
         </section>
       </main>
     </div>
+
+    <button id="visualOverlay" class="visual-overlay" type="button" aria-label="退出全屏主视觉" hidden>
+      <img src="./主视觉.jpg" alt="陆取通知新生舞会主视觉" />
+    </button>
 
     <dialog id="adminDialog" class="admin-dialog">
       <button class="dialog-close" type="button" aria-label="关闭">×</button>
